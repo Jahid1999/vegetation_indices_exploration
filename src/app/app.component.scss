@@ -1,0 +1,27 @@
+.menu-item.active {
+  /* Elevate the button */
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.18),
+    0 1.5px 6px 0 rgba(0, 80, 180, 0.12);
+  /* Glossy border */
+  border: 2px solid #aeefff;
+  background: linear-gradient(120deg, #0a5c7d 80%, #e0f7fa 100%);
+  /* Gloss effect */
+  position: relative;
+  overflow: hidden;
+}
+.menu-item.active::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  //   background: linear-gradient(
+  //     120deg,
+  //     rgba(79, 77, 77, 0.45) 0%,
+  //     rgba(255, 255, 255, 0.05) 100%
+  //   );
+  pointer-events: none;
+  border-radius: 8px 8px 40% 40%/60% 60% 40% 40%;
+}

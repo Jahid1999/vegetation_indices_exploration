@@ -1,59 +1,143 @@
-# DigifarmMaps
+# DigiFarm Maps - Digital Agriculture Platform
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.6.
+A modern web application for viewing and analyzing agricultural field data using interactive maps.
 
-## Development server
+## Features
 
-To start a local development server, run:
+### 🗺️ Interactive Mapping
+
+- **Delineated Land**: Click anywhere on the map to fetch and display field boundaries with detailed agricultural information
+- **Boundary Box**: Draw rectangles to select areas and view all fields within the boundary
+- **Multiple Map Layers**: Switch between satellite and OpenStreetMap views
+- **Search Functionality**: Search for specific locations using the integrated geocoding
+
+### 📊 Field Information
+
+- **Detailed Field Data**: View comprehensive information about agricultural fields
+- **Crop Information**: Access crop types, sowing dates, and harvest estimates
+- **Farm Management**: View grower and farm details
+- **Area Calculations**: Automatic area calculations in multiple units (m², acres, hectares)
+
+### 🎨 Modern UI/UX Design
+
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Intuitive Navigation**: Clean sidebar navigation with visual feedback
+- **Loading States**: Real-time feedback during data fetching operations
+- **Status Notifications**: Clear success, error, and information messages
+- **Accessibility**: WCAG compliant with proper focus states and keyboard navigation
+
+## UI/UX Improvements
+
+### Design System
+
+- **Consistent Color Palette**: Professional color scheme with primary, secondary, and accent colors
+- **Typography**: Modern Inter font family with proper hierarchy
+- **Spacing System**: Consistent padding, margins, and gaps throughout the application
+- **Shadow System**: Layered shadows for depth and visual hierarchy
+- **Border Radius**: Consistent rounded corners for modern appearance
+
+### Enhanced User Experience
+
+- **Visual Feedback**: Hover effects, transitions, and animations for better interactivity
+- **Loading Indicators**: Spinning animations and progress feedback during API calls
+- **Status Messages**: Toast-style notifications for user actions and system responses
+- **Improved Popups**: Redesigned map popups with better typography and layout
+- **Better Controls**: Styled map controls with consistent design language
+
+### Responsive Design
+
+- **Mobile-First Approach**: Optimized layouts for different screen sizes
+- **Flexible Navigation**: Adaptive sidebar that transforms for mobile devices
+- **Touch-Friendly**: Larger touch targets and improved mobile interactions
+- **Cross-Platform**: Consistent experience across different browsers and devices
+
+### Accessibility Features
+
+- **Keyboard Navigation**: Full keyboard support for all interactive elements
+- **Focus Management**: Clear focus indicators and logical tab order
+- **Screen Reader Support**: Proper ARIA labels and semantic HTML
+- **High Contrast Support**: Enhanced visibility for users with visual impairments
+- **Reduced Motion**: Respects user preferences for motion sensitivity
+
+## Technical Stack
+
+- **Frontend Framework**: Angular 19
+- **Mapping Library**: Leaflet.js
+- **Styling**: SCSS with CSS Custom Properties
+- **Search**: Leaflet GeoSearch with OpenStreetMap provider
+- **Drawing Tools**: Leaflet Draw for boundary selection
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
 
 ```bash
-ng serve
+# Clone the repository
+git clone <repository-url>
+cd digifarm-maps
+
+# Install dependencies
+npm install
+
+# Start development server
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Build for Production
 
 ```bash
-ng generate component component-name
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Usage
 
-```bash
-ng generate --help
-```
+### Delineated Land
 
-## Building
+1. Navigate to the "Delineated Land" section
+2. Click anywhere on the map to fetch field data
+3. Hover over displayed polygons to view detailed information
+4. Use the search bar to navigate to specific locations
 
-To build the project run:
+### Boundary Box
 
-```bash
-ng build
-```
+1. Navigate to the "Boundary Box" section
+2. Use the rectangle drawing tool to select an area
+3. Choose between "Exclusive" (fully inside) or "Inclusive" (partially inside) filtering
+4. View all fields within the selected boundary
+5. Hover over polygons to see field details
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## API Integration
 
-## Running unit tests
+The application integrates with:
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+- **DigiFarm API**: For field boundary and agricultural data
+- **Geosys API**: For detailed season field information
+- **OpenStreetMap**: For base map tiles and geocoding
 
-```bash
-ng test
-```
+## Browser Support
 
-## Running end-to-end tests
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
 
-For end-to-end (e2e) testing, run:
+## Contributing
 
-```bash
-ng e2e
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## License
 
-## Additional Resources
+This project is licensed under the MIT License.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Support
+
+For support and questions, please contact the development team.
