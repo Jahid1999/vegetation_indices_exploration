@@ -141,3 +141,30 @@ This project is licensed under the MIT License.
 ## Support
 
 For support and questions, please contact the development team.
+
+## Histogram Control
+
+The histogram control provides comprehensive statistics and visualization for NDVI/NDWI image data:
+
+### Features:
+
+- **Statistics Display**: Shows min, mean, and max values for the currently active image
+- **Interactive Bar Chart**: Visualizes the distribution of NDVI/NDWI values across the field
+- **Color-coded Bars**: Each bar in the histogram uses the same colors as the image overlay
+- **Collapsible Interface**: Can be collapsed to save screen space
+- **Responsive Design**: Adapts to different screen sizes
+
+### Usage:
+
+1. Click on a field to load the polygon boundary
+2. Click "Show NDVI" to display the image overlay
+3. The histogram control will automatically appear on the left side
+4. Use the image type dropdown to switch between different indices (NDVI, NDWI, etc.)
+5. The histogram updates automatically when changing image types
+6. Click the "−" button to collapse the control
+
+### Data Sources:
+
+- Statistics: `histogram.min`, `histogram.mean`, `histogram.max`
+- Chart data: `histogram.items[]` with `valueMin`, `valueMax`, `area`, and `color` properties
+- Visualization prioritizes area (hectares) over pixel count for meaningful representation

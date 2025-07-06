@@ -1,8 +1,13 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy } from '@angular/core';
 import * as L from 'leaflet';
 import 'leaflet-geosearch';
 import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
 import { CommonModule } from '@angular/common';
+import { MapApiService } from '../services/map-api.service';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
+
+// Register Chart.js components
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-single-land',
@@ -11,10 +16,9 @@ import { CommonModule } from '@angular/common';
   templateUrl: './single-land.component.html',
   styleUrl: './single-land.component.scss',
 })
-export class SingleLandComponent implements AfterViewInit {
+export class SingleLandComponent implements AfterViewInit, OnDestroy {
   private map!: L.Map;
   polygonLayer: L.GeoJSON | null = null;
-  private token: string = '';
   private seasonFieldInfo: any = null;
   private ndviLayer: L.ImageOverlay | null = null;
   private ndviControlDiv: HTMLDivElement | null = null;
@@ -28,15 +32,31 @@ export class SingleLandComponent implements AfterViewInit {
   private imageUrl: string = '';
   private imageData: any = null;
 
+  // Histogram control properties
+  private histogramControlDiv: HTMLDivElement | null = null;
+  private histogramChart: Chart | null = null;
+  private histogramData: any = null;
+  private histogramCollapsed: boolean = false;
+
   // UI State properties
   isLoading: boolean = false;
   statusMessage: string = '';
   statusType: 'success' | 'error' | 'info' = 'info';
   showNDVI: boolean = false;
 
+  constructor(private mapApiService: MapApiService) {}
+
   ngAfterViewInit(): void {
     this.fetchToken();
     this.initMap();
+  }
+
+  ngOnDestroy(): void {
+    // Clean up Chart.js instance to prevent memory leaks
+    if (this.histogramChart) {
+      this.histogramChart.destroy();
+      this.histogramChart = null;
+    }
   }
 
   private showStatus(
@@ -57,41 +77,15 @@ export class SingleLandComponent implements AfterViewInit {
   }
 
   private fetchToken(): void {
-    const myHeaders = new Headers();
-    myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
-    myHeaders.append(
-      'Cookie',
-      'refresh_token=69704F92EC426259E792A04B4941F763A4F063E63647344EBDEB16E44645364D'
-    );
-
-    const urlencoded = new URLSearchParams();
-    urlencoded.append('grant_type', 'password');
-    urlencoded.append('client_id', 'eu_research_and_development_agency_demo');
-    urlencoded.append('username', 'EU_RESEARCH_AND_DEVELOPMENT_AGENCY');
-    urlencoded.append('password', 'da0acec5');
-    urlencoded.append('scope', 'openid offline_access');
-    urlencoded.append(
-      'client_secret',
-      'eu_research_and_development_agency_demo.secret'
-    );
-
-    const requestOptions: RequestInit = {
-      method: 'POST',
-      headers: myHeaders,
-      body: urlencoded,
-      redirect: 'follow',
-    };
-
-    fetch('https://identity.geosys-na.com/v2.1/connect/token', requestOptions)
-      .then((response) => response.json())
-      .then((result) => {
-        console.log('Token response:', result);
-        if (result.access_token) {
-          this.token = result.access_token;
-          console.log('Token saved:', this.token);
-        }
+    this.mapApiService
+      .fetchToken()
+      .then((token) => {
+        console.log('Token fetched successfully');
       })
-      .catch((error) => console.error('Error fetching token:', error));
+      .catch((error) => {
+        console.error('Error fetching token:', error);
+        this.showStatus('Failed to authenticate', 'error');
+      });
   }
 
   private initMap(): void {
@@ -189,7 +183,7 @@ export class SingleLandComponent implements AfterViewInit {
         div.style.minWidth = '150px';
 
         const label = L.DomUtil.create('label', '', div);
-        label.innerHTML = 'Image Type:';
+        label.innerHTML = 'Karten Type:';
         label.style.display = 'block';
         label.style.marginBottom = '4px';
         label.style.fontSize = '12px';
@@ -222,6 +216,106 @@ export class SingleLandComponent implements AfterViewInit {
     });
 
     this.map.addControl(new ImageTypeControl({ position: 'topleft' }));
+
+    // Add Histogram Control
+    const HistogramControl = L.Control.extend({
+      onAdd: (map: L.Map) => {
+        const div = L.DomUtil.create(
+          'div',
+          'leaflet-control histogram-control'
+        );
+        div.style.background = 'white';
+        div.style.border = '2px solid rgba(0,0,0,0.2)';
+        div.style.borderRadius = '8px';
+        div.style.padding = '0';
+        div.style.display = 'none'; // Initially hidden
+        div.style.minWidth = '320px';
+        div.style.maxWidth = '400px';
+        div.style.fontFamily = 'inherit';
+
+        // Header with title and collapse button
+        const header = L.DomUtil.create('div', 'histogram-header', div);
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.padding = '12px 16px';
+        header.style.borderBottom = '1px solid #e0e0e0';
+        header.style.backgroundColor = '#f8f9fa';
+        header.style.borderRadius = '6px 6px 0 0';
+
+        const title = L.DomUtil.create('h4', 'histogram-title', header);
+        title.innerHTML = 'Statistics & Histogram';
+        title.style.margin = '0';
+        title.style.fontSize = '14px';
+        title.style.fontWeight = '600';
+        title.style.color = 'var(--text-primary)';
+
+        const collapseBtn = L.DomUtil.create(
+          'button',
+          'histogram-collapse-btn',
+          header
+        );
+        collapseBtn.innerHTML = '−';
+        collapseBtn.style.background = 'none';
+        collapseBtn.style.border = 'none';
+        collapseBtn.style.fontSize = '18px';
+        collapseBtn.style.fontWeight = 'bold';
+        collapseBtn.style.cursor = 'pointer';
+        collapseBtn.style.color = 'var(--text-secondary)';
+        collapseBtn.style.padding = '0';
+        collapseBtn.style.width = '20px';
+        collapseBtn.style.height = '20px';
+        collapseBtn.style.display = 'flex';
+        collapseBtn.style.alignItems = 'center';
+        collapseBtn.style.justifyContent = 'center';
+
+        // Content container
+        const content = L.DomUtil.create('div', 'histogram-content', div);
+        content.style.padding = '16px';
+
+        // Statistics section
+        const statsDiv = L.DomUtil.create('div', 'histogram-stats', content);
+        statsDiv.style.marginBottom = '16px';
+        statsDiv.style.display = 'grid';
+        statsDiv.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        statsDiv.style.gap = '8px';
+
+        // Chart container
+        const chartContainer = L.DomUtil.create(
+          'div',
+          'histogram-chart-container',
+          content
+        );
+        chartContainer.style.position = 'relative';
+        chartContainer.style.height = '200px';
+        chartContainer.style.marginBottom = '8px';
+
+        const canvas = L.DomUtil.create(
+          'canvas',
+          'histogram-chart',
+          chartContainer
+        );
+        canvas.style.maxHeight = '200px';
+
+        // Collapse functionality
+        collapseBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.toggleHistogramCollapse();
+        });
+
+        // Prevent map drag when interacting with control
+        L.DomEvent.disableClickPropagation(div);
+
+        // Store reference to the control for later updates
+        this.histogramControlDiv = div;
+
+        return div;
+      },
+      onRemove: (map: L.Map) => {},
+    });
+
+    this.map.addControl(new HistogramControl({ position: 'topleft' }));
 
     // Add search control
     const provider = new OpenStreetMapProvider();
@@ -345,14 +439,22 @@ export class SingleLandComponent implements AfterViewInit {
   }
 
   private fetchAndDrawPolygon(lng: number, lat: number) {
-    this.seasonFieldInfo = null; // Reset on new click
-    this.showNDVI = false; // Reset NDVI state
-    this.imageUrl = ''; // Clear image URL
-    this.imageData = null; // Clear image data
+    // Complete cleanup before drawing new polygon
+    this.resetMapState();
+
+    this.seasonFieldInfo = null;
+    this.showNDVI = false;
+    this.imageUrl = '';
+    this.imageData = null;
+    this.selectedImageType = 'NDVI';
+    this.ImageSensorId = '';
+    this.mapsArray = [];
+    this.ndviData = null;
+    this.histogramData = null;
+
     if (this.ndviControlButton) {
       this.ndviControlButton.innerHTML = 'Show NDVI';
     }
-    this.removeNDVIOverlay(); // Remove any existing NDVI overlay
 
     // Hide image type control when drawing new polygon
     if (this.imageTypeControlDiv) {
@@ -362,21 +464,9 @@ export class SingleLandComponent implements AfterViewInit {
     this.setLoading(true);
     this.showStatus('Fetching field data...', 'info');
 
-    const url = `https://api.digifarm.io/v1/delineated-fields/location?token=a0731a8c-5259-4c68-af3a-7ad4f6d53faa&location=${lng},${lat}&data_version=latest&simplified_geometry=false`;
-    fetch(url)
-      .then((res) => res.json())
+    this.mapApiService
+      .fetchFieldData(lng, lat)
       .then((geojson) => {
-        if (!geojson || !geojson.geometry) {
-          this.showStatus('No field data found at this location', 'error');
-          this.setLoading(false);
-          return;
-        }
-
-        // Remove previous polygon
-        if (this.polygonLayer) {
-          this.map.removeLayer(this.polygonLayer);
-        }
-
         // Draw new polygon with proper initial opacity
         this.polygonLayer = L.geoJSON(geojson, {
           onEachFeature: (feature, layer) => {
@@ -417,60 +507,10 @@ export class SingleLandComponent implements AfterViewInit {
   }
 
   private fetchSeasonFields(fieldId: string) {
-    const myHeaders = new Headers();
-    myHeaders.append('Content-Type', 'application/json');
-    myHeaders.append('Authorization', `Bearer ${this.token}`);
-    const raw = JSON.stringify({
-      query: {
-        filters: [
-          "Field.Farm.Grower.Id=='kxmymkd'",
-          "Field.Farm.Id=='z62x36'",
-          `Field.Name=='${fieldId}'`,
-        ],
-        limit: -1,
-      },
-      fields: [
-        'id',
-        'field.id',
-        'field.name',
-        'field.farm.id',
-        'field.farm.name',
-        'field.farm.grower.id',
-        'field.farm.grower.companyname',
-        'acreage',
-        'crop.id',
-        'crop.name',
-        'cropVariety.id',
-        'sowingDate',
-        'estimatedHarvestDate',
-        'isIrrigated',
-        'cropUsage.id',
-        'cropUsage.name',
-        'UserYield',
-        'externalIds',
-        'fsaFarmId',
-        'fsaFieldId',
-        'fsaTractId',
-      ],
-    });
-    const requestOptions: RequestInit = {
-      method: 'SEARCH',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow',
-    };
-    fetch(
-      'https://api.geosys-na.net/DomainManagement/Geosys.DomainManagement.WebAPI/V6/seasonfields',
-      requestOptions
-    )
-      .then((response) => response.json())
+    this.mapApiService
+      .fetchSeasonFields(fieldId)
       .then((result) => {
-        if (result && Array.isArray(result) && result.length > 0) {
-          this.seasonFieldInfo = result[0];
-        } else {
-          this.seasonFieldInfo = null;
-        }
-        console.log('Season fields response:', result);
+        this.seasonFieldInfo = result;
       })
       .catch((error) => {
         this.seasonFieldInfo = null;
@@ -491,6 +531,9 @@ export class SingleLandComponent implements AfterViewInit {
         this.imageTypeControlDiv.style.display = 'none';
       }
 
+      // Hide histogram control when toggling NDVI off
+      this.hideHistogramControl();
+
       // Ensure polygon opacity is restored when hiding through toggle
       if (this.polygonLayer) {
         this.polygonLayer.setStyle({
@@ -508,28 +551,11 @@ export class SingleLandComponent implements AfterViewInit {
   }
 
   private fetchSensorInfo(): void {
-    if (!this.token) {
-      this.showStatus('Authentication token not available', 'error');
-      return;
-    }
-
     this.setLoading(true);
-    this.showStatus('Fetching NDVI data...', 'info');
+    this.showStatus('Fetching sensor data...', 'info');
 
-    const myHeaders = new Headers();
-    myHeaders.append('Authorization', `Bearer ${this.token}`);
-
-    const requestOptions: RequestInit = {
-      method: 'GET',
-      headers: myHeaders,
-      redirect: 'follow',
-    };
-
-    fetch(
-      `https://api.geosys-na.net/field-level-maps/v5/season-fields/7exrdrn/catalog-imagery?$fields=Image.Date,Image.Id,coveragePercent,Maps.Type,Image.spatialResolution,Image.sensor,mask&$limit=none&$count=true&mask=auto&Image.Date=$between:2025-06-30|2025-06-30&coveragePercent=$gte:0&Maps.Type=$in:${this.selectedImageType}`,
-      requestOptions
-    )
-      .then((response) => response.json())
+    this.mapApiService
+      .fetchSensorInfo(this.selectedImageType)
       .then((result) => {
         this.ndviData = result;
 
@@ -542,7 +568,6 @@ export class SingleLandComponent implements AfterViewInit {
 
           if (firstItem.maps && Array.isArray(firstItem.maps)) {
             this.mapsArray = firstItem.maps;
-            console.log('Maps array stored:', this.mapsArray);
 
             // Populate and show image type control
             this.populateImageTypeControl();
@@ -558,59 +583,36 @@ export class SingleLandComponent implements AfterViewInit {
         this.setLoading(false);
       })
       .catch((error) => {
-        console.error('Error fetching NDVI data:', error);
-        this.showStatus('Error loading NDVI data', 'error');
+        console.error('Error fetching sensor data:', error);
+        this.showStatus('Error loading sensor data', 'error');
         this.setLoading(false);
       });
   }
 
   private fetchImageData(): void {
-    if (!this.token) {
-      this.showStatus('Authentication token not available', 'error');
+    if (!this.ImageSensorId) {
+      this.showStatus('Image sensor ID not available', 'error');
       return;
     }
 
-    if (!this.ImageSensorId) {
-      this.showStatus('Image sensor ID not available', 'error');
+    if (!this.seasonFieldInfo || !this.seasonFieldInfo.id) {
+      this.showStatus('Season field information not available', 'error');
       return;
     }
 
     this.setLoading(true);
     this.showStatus('Fetching map data...', 'info');
 
-    const myHeaders = new Headers();
-    myHeaders.append('Content-Type', 'application/json');
-    myHeaders.append('Authorization', `Bearer ${this.token}`);
-
-    const raw = JSON.stringify({
-      mapParams: [
-        {
-          image: {
-            id: this.ImageSensorId,
-          },
-          seasonField: {
-            id: this.seasonFieldInfo.id,
-          },
-        },
-      ],
-    });
-
-    const requestOptions: RequestInit = {
-      method: 'POST',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow',
-    };
-
-    fetch(
-      `https://api.geosys-na.net/field-level-maps/v5/map-sets/base-reference-map/${this.selectedImageType}?directLinks=true&legendType=Dynamic&$epsg-out=3857&histogram=true`,
-      requestOptions
-    )
-      .then((response) => response.json())
+    this.mapApiService
+      .fetchImageData(
+        this.ImageSensorId,
+        this.seasonFieldInfo.id,
+        this.selectedImageType
+      )
       .then((result) => {
         this.imageData = result;
 
-        // Extract image URL from the response
+        // Extract image URL and histogram data from the response
         if (result && Array.isArray(result) && result.length > 0) {
           const firstResult = result[0];
           if (
@@ -621,8 +623,17 @@ export class SingleLandComponent implements AfterViewInit {
             const firstMap = firstResult.maps[0];
             if (firstMap._links && firstMap._links['image:image/png']) {
               this.imageUrl = firstMap._links['image:image/png'];
-              console.log('Image URL extracted:', this.imageUrl);
             }
+
+            // Store histogram data
+            if (firstMap.histogram) {
+              this.histogramData = firstMap;
+            }
+          }
+
+          // Also check for legend data as fallback
+          if (!this.histogramData && firstResult.legend) {
+            this.histogramData = firstResult;
           }
         }
 
@@ -667,6 +678,12 @@ export class SingleLandComponent implements AfterViewInit {
       fillOpacity: 0,
     });
 
+    // Show and update histogram control
+    if (this.histogramData) {
+      this.showHistogramControl();
+      this.updateHistogramControl();
+    }
+
     this.showStatus(`${this.selectedImageType} overlay added`, 'success');
   }
 
@@ -674,17 +691,28 @@ export class SingleLandComponent implements AfterViewInit {
     if (this.ndviLayer) {
       this.map.removeLayer(this.ndviLayer);
       this.ndviLayer = null;
-      this.imageUrl = ''; // Clear image URL
-
-      // Restore polygon fill opacity when hiding image overlay
-      if (this.polygonLayer) {
-        this.polygonLayer.setStyle({
-          fillOpacity: 0.3,
-        });
-      }
-
-      this.showStatus(`${this.selectedImageType} overlay removed`, 'info');
     }
+
+    // Force remove all image overlays (in case there are orphaned layers)
+    this.map.eachLayer((layer: any) => {
+      if (layer instanceof L.ImageOverlay) {
+        this.map.removeLayer(layer);
+      }
+    });
+
+    this.imageUrl = ''; // Clear image URL
+
+    // Hide histogram control
+    this.hideHistogramControl();
+
+    // Restore polygon fill opacity when hiding image overlay
+    if (this.polygonLayer) {
+      this.polygonLayer.setStyle({
+        fillOpacity: 0.3,
+      });
+    }
+
+    this.showStatus(`${this.selectedImageType} overlay removed`, 'info');
   }
 
   private showNDVIControl(): void {
@@ -716,6 +744,249 @@ export class SingleLandComponent implements AfterViewInit {
   private showImageTypeControl(): void {
     if (this.imageTypeControlDiv) {
       this.imageTypeControlDiv.style.display = 'block';
+    }
+  }
+
+  private resetMapState(): void {
+    // Force remove any existing image overlay
+    if (this.ndviLayer) {
+      this.map.removeLayer(this.ndviLayer);
+      this.ndviLayer = null;
+    }
+
+    // Force remove all image overlays from the map (in case there are orphaned layers)
+    this.map.eachLayer((layer: any) => {
+      if (layer instanceof L.ImageOverlay) {
+        this.map.removeLayer(layer);
+      }
+    });
+
+    // Remove any existing polygon and reset its state
+    if (this.polygonLayer) {
+      this.map.removeLayer(this.polygonLayer);
+      this.polygonLayer = null;
+    }
+
+    // Clear histogram data and destroy chart
+    this.histogramData = null;
+    if (this.histogramChart) {
+      this.histogramChart.destroy();
+      this.histogramChart = null;
+    }
+
+    // Hide controls
+    if (this.ndviControlDiv) {
+      this.ndviControlDiv.style.display = 'none';
+    }
+
+    if (this.imageTypeControlDiv) {
+      this.imageTypeControlDiv.style.display = 'none';
+    }
+
+    if (this.histogramControlDiv) {
+      this.histogramControlDiv.style.display = 'none';
+    }
+
+    // Clear any existing popups
+    this.map.closePopup();
+  }
+
+  private toggleHistogramCollapse(): void {
+    if (!this.histogramControlDiv) return;
+
+    const content = this.histogramControlDiv.querySelector(
+      '.histogram-content'
+    ) as HTMLDivElement;
+    const collapseBtn = this.histogramControlDiv.querySelector(
+      '.histogram-collapse-btn'
+    ) as HTMLButtonElement;
+
+    this.histogramCollapsed = !this.histogramCollapsed;
+
+    if (this.histogramCollapsed) {
+      content.style.display = 'none';
+      collapseBtn.innerHTML = '+';
+    } else {
+      content.style.display = 'block';
+      collapseBtn.innerHTML = '−';
+    }
+  }
+
+  private updateHistogramControl(): void {
+    if (!this.histogramControlDiv || !this.histogramData) return;
+
+    const statsDiv = this.histogramControlDiv.querySelector(
+      '.histogram-stats'
+    ) as HTMLDivElement;
+    const canvas = this.histogramControlDiv.querySelector(
+      '.histogram-chart'
+    ) as HTMLCanvasElement;
+
+    // Clear existing stats
+    statsDiv.innerHTML = '';
+
+    // Update statistics
+    const stats =
+      this.histogramData.histogram || this.histogramData.legend?.stat;
+    if (stats) {
+      this.createStatisticItem(
+        statsDiv,
+        'Min',
+        stats.min,
+        this.selectedImageType
+      );
+      this.createStatisticItem(
+        statsDiv,
+        'Mean',
+        stats.mean,
+        this.selectedImageType
+      );
+      this.createStatisticItem(
+        statsDiv,
+        'Max',
+        stats.max,
+        this.selectedImageType
+      );
+    }
+
+    // Update histogram chart
+    this.createHistogramChart(canvas);
+  }
+
+  private createStatisticItem(
+    container: HTMLDivElement,
+    label: string,
+    value: number,
+    type: string
+  ): void {
+    const item = L.DomUtil.create('div', 'stat-item', container);
+    item.style.textAlign = 'center';
+    item.style.padding = '8px';
+    item.style.backgroundColor = '#f8f9fa';
+    item.style.borderRadius = '4px';
+    item.style.border = '1px solid #e0e0e0';
+
+    const labelEl = L.DomUtil.create('div', 'stat-label', item);
+    labelEl.innerHTML = `${label} ${type}`;
+    labelEl.style.fontSize = '11px';
+    labelEl.style.fontWeight = '600';
+    labelEl.style.color = 'var(--text-secondary)';
+    labelEl.style.marginBottom = '4px';
+
+    const valueEl = L.DomUtil.create('div', 'stat-value', item);
+    valueEl.innerHTML = value.toFixed(4);
+    valueEl.style.fontSize = '13px';
+    valueEl.style.fontWeight = '700';
+    valueEl.style.color = 'var(--text-primary)';
+  }
+
+  private createHistogramChart(canvas: HTMLCanvasElement): void {
+    if (!this.histogramData || !this.histogramData.histogram) return;
+
+    // Destroy existing chart if it exists
+    if (this.histogramChart) {
+      this.histogramChart.destroy();
+    }
+
+    const histogram = this.histogramData.histogram;
+    const items = histogram.items || [];
+
+    // Prepare data for Chart.js
+    const labels = items.map(
+      (item: any) => `${item.valueMin.toFixed(2)} - ${item.valueMax.toFixed(2)}`
+    );
+    const data = items.map((item: any) => item.area || item.numberOfPixel);
+    const backgroundColors = items.map(
+      (item: any) =>
+        `rgba(${item.color.r}, ${item.color.g}, ${item.color.b}, 0.8)`
+    );
+    const borderColors = items.map(
+      (item: any) =>
+        `rgba(${item.color.r}, ${item.color.g}, ${item.color.b}, 1)`
+    );
+
+    const config: ChartConfiguration = {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Area (ha)',
+            data: data,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            maxBarThickness: 30,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              title: (context) => {
+                const item = items[context[0].dataIndex];
+                return `${this.selectedImageType}: ${item.valueMin.toFixed(
+                  3
+                )} - ${item.valueMax.toFixed(3)}`;
+              },
+              label: (context) => {
+                const item = items[context.dataIndex];
+                return [
+                  `Area: ${item.area.toFixed(4)} ha`,
+                  `Pixels: ${item.numberOfPixel.toLocaleString()}`,
+                ];
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: `${this.selectedImageType} Value Range`,
+            },
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              font: {
+                size: 9,
+              },
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Area (ha)',
+            },
+            beginAtZero: true,
+            ticks: {
+              font: {
+                size: 10,
+              },
+            },
+          },
+        },
+      },
+    };
+
+    this.histogramChart = new Chart(canvas, config);
+  }
+
+  private showHistogramControl(): void {
+    if (this.histogramControlDiv) {
+      this.histogramControlDiv.style.display = 'block';
+    }
+  }
+
+  private hideHistogramControl(): void {
+    if (this.histogramControlDiv) {
+      this.histogramControlDiv.style.display = 'none';
     }
   }
 }
