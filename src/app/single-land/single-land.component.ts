@@ -32,6 +32,13 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
   private imageUrl: string = '';
   private imageData: any = null;
 
+  // Date selection control properties
+  private dateControlDiv: HTMLDivElement | null = null;
+  private dateSelect: HTMLSelectElement | null = null;
+  private selectedDateId: string = '';
+  private selectedDate: string = '';
+  private availableDates: any[] = [];
+
   // Histogram control properties
   private histogramControlDiv: HTMLDivElement | null = null;
   private histogramChart: Chart | null = null;
@@ -168,54 +175,102 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
 
     this.map.addControl(new NDVIControl({ position: 'bottomright' }));
 
-    // Add Image Type Control
-    const ImageTypeControl = L.Control.extend({
+    // Add Combined Image Type and Date Selection Control
+    const ImageTypeAndDateControl = L.Control.extend({
       onAdd: (map: L.Map) => {
         const div = L.DomUtil.create(
           'div',
-          'leaflet-control image-type-control'
+          'leaflet-control image-type-date-control'
         );
         div.style.background = 'white';
         div.style.border = '2px solid rgba(0,0,0,0.2)';
         div.style.borderRadius = '4px';
         div.style.padding = '8px';
         div.style.display = 'none'; // Initially hidden
-        div.style.minWidth = '150px';
+        div.style.minWidth = '370px';
+        div.style.width = '370px';
+        div.style.gap = '10px';
+        div.style.alignItems = 'flex-end';
 
-        const label = L.DomUtil.create('label', '', div);
-        label.innerHTML = 'Karten Type:';
-        label.style.display = 'block';
-        label.style.marginBottom = '4px';
-        label.style.fontSize = '12px';
-        label.style.fontWeight = '600';
-        label.style.color = 'var(--text-secondary)';
+        // Date Selection Section
+        const dateSection = L.DomUtil.create('div', 'date-section', div);
+        dateSection.style.flex = '1';
+        dateSection.style.minWidth = '170px';
 
-        const select = L.DomUtil.create('select', 'image-type-select', div);
-        select.style.width = '100%';
-        select.style.padding = '4px';
-        select.style.border = '1px solid #ccc';
-        select.style.borderRadius = '4px';
-        select.style.fontSize = '12px';
-        select.style.fontFamily = 'inherit';
+        const dateLabel = L.DomUtil.create('label', '', dateSection);
+        dateLabel.innerHTML = 'Date:';
+        dateLabel.style.display = 'block';
+        dateLabel.style.marginBottom = '4px';
+        dateLabel.style.fontSize = '12px';
+        dateLabel.style.fontWeight = '600';
+        dateLabel.style.color = 'var(--text-secondary)';
 
-        select.addEventListener('change', (e) => {
+        const dateSelect = L.DomUtil.create(
+          'select',
+          'date-select',
+          dateSection
+        );
+        dateSelect.style.width = '100%';
+        dateSelect.style.padding = '4px';
+        dateSelect.style.border = '1px solid #ccc';
+        dateSelect.style.borderRadius = '4px';
+        dateSelect.style.fontSize = '12px';
+        dateSelect.style.fontFamily = 'inherit';
+
+        dateSelect.addEventListener('change', (e) => {
+          this.selectedDateId = (e.target as HTMLSelectElement).value;
+          this.onDateSelectionChange();
+        });
+
+        // Image Type Section
+        const imageTypeSection = L.DomUtil.create(
+          'div',
+          'image-type-section',
+          div
+        );
+        imageTypeSection.style.flex = '1';
+        imageTypeSection.style.minWidth = '150px';
+
+        const imageTypeLabel = L.DomUtil.create('label', '', imageTypeSection);
+        imageTypeLabel.innerHTML = 'Karten Type:';
+        imageTypeLabel.style.display = 'block';
+        imageTypeLabel.style.marginBottom = '4px';
+        imageTypeLabel.style.fontSize = '12px';
+        imageTypeLabel.style.fontWeight = '600';
+        imageTypeLabel.style.color = 'var(--text-secondary)';
+
+        const imageTypeSelect = L.DomUtil.create(
+          'select',
+          'image-type-select',
+          imageTypeSection
+        );
+        imageTypeSelect.style.width = '100%';
+        imageTypeSelect.style.padding = '4px';
+        imageTypeSelect.style.border = '1px solid #ccc';
+        imageTypeSelect.style.borderRadius = '4px';
+        imageTypeSelect.style.fontSize = '12px';
+        imageTypeSelect.style.fontFamily = 'inherit';
+
+        imageTypeSelect.addEventListener('change', (e) => {
           this.selectedImageType = (e.target as HTMLSelectElement).value;
-          this.fetchSensorInfo();
+          this.fetchImageData();
         });
 
         // Prevent map drag when interacting with control
         L.DomEvent.disableClickPropagation(div);
 
-        // Store reference to the control for later updates
+        // Store references to the control elements for later updates
         this.imageTypeControlDiv = div;
-        this.imageTypeSelect = select;
+        this.imageTypeSelect = imageTypeSelect;
+        this.dateControlDiv = div; // Same div contains both controls
+        this.dateSelect = dateSelect;
 
         return div;
       },
       onRemove: (map: L.Map) => {},
     });
 
-    this.map.addControl(new ImageTypeControl({ position: 'topleft' }));
+    this.map.addControl(new ImageTypeAndDateControl({ position: 'topleft' }));
 
     // Add Histogram Control
     const HistogramControl = L.Control.extend({
@@ -229,7 +284,7 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
         div.style.borderRadius = '8px';
         div.style.padding = '0';
         div.style.display = 'none'; // Initially hidden
-        div.style.minWidth = '320px';
+        div.style.minWidth = '370px';
         div.style.maxWidth = '400px';
         div.style.fontFamily = 'inherit';
 
@@ -451,6 +506,9 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
     this.mapsArray = [];
     this.ndviData = null;
     this.histogramData = null;
+    this.selectedDate = '';
+    this.selectedDateId = '';
+    this.availableDates = [];
 
     if (this.ndviControlButton) {
       this.ndviControlButton.innerHTML = 'Show Maps';
@@ -559,16 +617,15 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
       .then((result) => {
         this.ndviData = result;
 
-        // Extract ImageSensorId and maps array from the response
+        // Extract ImageSensorId, maps array, and available dates from the response
         if (result && Array.isArray(result) && result.length > 0) {
-          const firstItem = result[0];
-          if (firstItem.image && firstItem.image.id) {
-            this.ImageSensorId = firstItem.image.id;
-          }
-
-          if (firstItem.maps && Array.isArray(firstItem.maps)) {
-            this.mapsArray = firstItem.maps;
-
+          this.populateAvailableDates(result);
+          const firstItem = this.availableDates[0];
+          if (firstItem) {
+            this.ImageSensorId = firstItem.imageSensorId;
+            this.selectedDate = firstItem.date;
+            this.selectedDateId = firstItem.uniqueId;
+            this.mapsArray = firstItem.imageTypesArray;
             // Populate and show image type control
             this.populateImageTypeControl();
             this.showImageTypeControl();
@@ -589,12 +646,33 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
       });
   }
 
-  private fetchImageData(): void {
-    if (!this.ImageSensorId) {
-      this.showStatus('Image sensor ID not available', 'error');
-      return;
-    }
+  private populateAvailableDates(result: any): void {
+    // Extract available dates from all items in the response
+    this.availableDates = result.map((item: any) => ({
+      date: item.image.date.split('T')[0], // Extract date part (YYYY-MM-DD)
+      sensor: item.image.sensor.replace('_', ' '), // Format sensor name
+      fullDate: item.image.date,
+      imageSensorId: item.image.id,
+      imageTypesArray: item.maps,
+      uniqueId: item.image.date.split('T')[0] + '#' + item.image.id,
+    }));
 
+    // Remove duplicates based on date and sort by date (newest first)
+    this.availableDates = this.availableDates
+      .filter(
+        (date, index, self) =>
+          index ===
+          self.findIndex(
+            (d) => d.date === date.date && d.sensor === date.sensor
+          )
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Populate date control (no need to show separately since it's the same div)
+    this.populateDateControl();
+  }
+
+  private fetchImageData(): void {
     if (!this.seasonFieldInfo || !this.seasonFieldInfo.id) {
       this.showStatus('Season field information not available', 'error');
       return;
@@ -743,8 +821,55 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
 
   private showImageTypeControl(): void {
     if (this.imageTypeControlDiv) {
-      this.imageTypeControlDiv.style.display = 'block';
+      this.imageTypeControlDiv.style.display = 'flex';
     }
+  }
+
+  private populateDateControl(): void {
+    if (this.dateSelect && this.availableDates.length > 0) {
+      // Clear existing options
+      this.dateSelect.innerHTML = '';
+
+      // Add options from available dates
+      this.availableDates.forEach((dateItem) => {
+        const option = document.createElement('option');
+        option.value = dateItem.uniqueId;
+        option.textContent = `${dateItem.date} (${dateItem.sensor})`;
+
+        // Select the first date by default if no date is selected
+        if (
+          !this.selectedDateId &&
+          this.availableDates.indexOf(dateItem) === 0
+        ) {
+          option.selected = true;
+          this.selectedDateId = dateItem.uniqueId;
+          this.selectedDate = dateItem.date;
+        } else if (dateItem.selectedDateId === this.selectedDateId) {
+          option.selected = true;
+        }
+
+        this.dateSelect!.appendChild(option);
+      });
+    }
+  }
+
+  private showDateControl(): void {
+    if (this.dateControlDiv) {
+      this.dateControlDiv.style.display = 'flex';
+    }
+  }
+
+  private onDateSelectionChange(): void {
+    const selectedDateItem = this.availableDates.find(
+      (item) => item.uniqueId === this.selectedDateId
+    );
+    if (selectedDateItem) {
+      this.ImageSensorId = selectedDateItem.imageSensorId;
+      this.mapsArray = selectedDateItem.imageTypesArray;
+      this.selectedDate = selectedDateItem.date;
+      this.populateImageTypeControl();
+    }
+    this.fetchImageData();
   }
 
   private resetMapState(): void {

@@ -160,8 +160,20 @@ export class MapApiService {
       redirect: 'follow',
     };
 
+    // Generate current date and three months back in YYYY-MM-DD format
+    const currentDate = new Date();
+    const threeMonthsBack = new Date(currentDate);
+    threeMonthsBack.setMonth(currentDate.getMonth() - 3);
+
+    const formatDate = (date: Date): string => {
+      return date.toISOString().split('T')[0];
+    };
+
+    const endDate = formatDate(currentDate);
+    const startDate = formatDate(threeMonthsBack);
+
     return fetch(
-      `https://api.geosys-na.net/field-level-maps/v5/season-fields/7exrdrn/catalog-imagery?$fields=Image.Date,Image.Id,coveragePercent,Maps.Type,Image.spatialResolution,Image.sensor,mask&$limit=none&$count=true&mask=auto&Image.Date=$between:2025-06-30|2025-06-30&coveragePercent=$gte:0&Maps.Type=$in:${selectedImageType}`,
+      `https://api.geosys-na.net/field-level-maps/v5/season-fields/7exrdrn/catalog-imagery?$fields=Image.Date,Image.Id,coveragePercent,Maps.Type,Image.spatialResolution,Image.sensor,mask&$limit=none&$count=true&mask=auto&Image.Date=$between:${startDate}|${endDate}&coveragePercent=$gte:0&Maps.Type=$in:${selectedImageType}`,
       requestOptions
     )
       .then((response) => response.json())
