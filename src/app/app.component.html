@@ -313,6 +313,15 @@
         <span class="menu-icon">⬜</span>
         Boundary Box
       </button>
+
+      <button
+        class="menu-item"
+        [ngClass]="{ active: isActive('/create-field') }"
+        (click)="navigateTo('/create-field')"
+      >
+        <span class="menu-icon">✏️</span>
+        Create Field
+      </button>
     </div>
   </nav>
 
@@ -320,9 +329,17 @@
     <div class="content-header">
       <h2 class="page-title">
         <span class="page-icon">
-          {{ isActive("/single-land") ? "📍" : "⬜" }}
+          {{
+            isActive("/single-land") ? "📍" : isActive("/bbox") ? "⬜" : "✏️"
+          }}
         </span>
-        {{ isActive("/single-land") ? "Delineated Land" : "Boundary Box" }}
+        {{
+          isActive("/single-land")
+            ? "Delineated Land"
+            : isActive("/bbox")
+            ? "Boundary Box"
+            : "Create Field"
+        }}
       </h2>
     </div>
 
