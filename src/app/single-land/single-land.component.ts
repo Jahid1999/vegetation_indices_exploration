@@ -129,7 +129,7 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
         div.style.display = 'none'; // Initially hidden
 
         const button = L.DomUtil.create('button', 'ndvi-button', div);
-        button.innerHTML = 'Show NDVI';
+        button.innerHTML = 'Show Maps';
         button.style.background = 'var(--primary-color)';
         button.style.color = 'white';
         button.style.border = 'none';
@@ -453,7 +453,7 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
     this.histogramData = null;
 
     if (this.ndviControlButton) {
-      this.ndviControlButton.innerHTML = 'Show NDVI';
+      this.ndviControlButton.innerHTML = 'Show Maps';
     }
 
     // Hide image type control when drawing new polygon
@@ -545,8 +545,8 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
     // Update button text
     if (this.ndviControlButton) {
       this.ndviControlButton.innerHTML = this.showNDVI
-        ? 'Hide NDVI'
-        : 'Show NDVI';
+        ? 'Hide Maps'
+        : 'Show Maps';
     }
   }
 
@@ -905,6 +905,12 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
         `rgba(${item.color.r}, ${item.color.g}, ${item.color.b}, 1)`
     );
 
+    // Calculate total area for percentage calculation
+    const totalArea = items.reduce(
+      (sum: number, item: any) => sum + item.area,
+      0
+    );
+
     const config: ChartConfiguration = {
       type: 'bar',
       data: {
@@ -937,8 +943,11 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
               },
               label: (context) => {
                 const item = items[context.dataIndex];
+                const percentage =
+                  totalArea > 0 ? (item.area / totalArea) * 100 : 0;
                 return [
                   `Area: ${item.area.toFixed(4)} ha`,
+                  `Percentage: ${percentage.toFixed(2)}%`,
                   `Pixels: ${item.numberOfPixel.toLocaleString()}`,
                 ];
               },
