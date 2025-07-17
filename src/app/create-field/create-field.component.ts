@@ -23,6 +23,7 @@ export class CreateFieldComponent implements AfterViewInit {
   isLoading: boolean = false;
   statusMessage: string = '';
   statusType: 'success' | 'error' | 'info' = 'info';
+  isCreating: boolean = false;
 
   ngAfterViewInit(): void {
     this.initMap();
@@ -216,6 +217,7 @@ export class CreateFieldComponent implements AfterViewInit {
   }
 
   private createField(lng: number, lat: number, clickedLayer: any) {
+    this.isCreating = true;
     this.setLoading(true);
     this.showStatus('Creating field...', 'info');
 
@@ -247,9 +249,10 @@ export class CreateFieldComponent implements AfterViewInit {
     })
       .then((response) => response.json())
       .then((data) => {
+        this.isCreating = false;
         this.setLoading(false);
         this.showStatus('Field created successfully!', 'success');
-
+        this.isCreating = false;
         // Change the clicked polygon color to green
         this.updatePolygonColor(clickedLayer, '#22c55e', 'success');
       })

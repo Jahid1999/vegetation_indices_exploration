@@ -233,7 +233,9 @@
     <div class="loading-overlay" [class.active]="isLoading">
       <div class="loading-content">
         <div class="loading-spinner"></div>
-        <p class="loading-text">Loading field data...</p>
+        <p class="loading-text">
+          {{ isCreating ? "Creating field..." : "Loading field data..." }}
+        </p>
       </div>
     </div>
 

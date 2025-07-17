@@ -78,6 +78,215 @@
   }
 }
 
+// Analytics Modal Control Styles
+.analytics-modal-control {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  max-height: 60vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+
+  .analytics-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+
+    .analytics-title {
+      color: #1f2937 !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.5px !important;
+      font-size: 18px !important;
+    }
+  }
+
+  .analytics-status {
+    margin-bottom: 24px !important;
+    padding: 20px 24px !important;
+    background: #f9fafb !important;
+    border-radius: 12px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+
+    h4 {
+      margin: 0 0 16px 0 !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      color: #1f2937 !important;
+      border-bottom: 2px solid #e5e7eb !important;
+      padding-bottom: 8px !important;
+    }
+
+    .status-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+      gap: 16px !important;
+      margin-top: 16px !important;
+    }
+
+    .status-card {
+      background: #ffffff !important;
+      border: 1px solid #e5e7eb !important;
+      border-radius: 8px !important;
+      padding: 16px !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+
+      &:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        border-color: #d1d5db !important;
+      }
+
+      &.current-status-card {
+        border-color: #10b981 !important;
+        background: linear-gradient(
+          135deg,
+          #ecfdf5 0%,
+          #f0fdf4 100%
+        ) !important;
+      }
+    }
+
+    .status-icon {
+      font-size: 24px !important;
+      width: 40px !important;
+      height: 40px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #f3f4f6 !important;
+      border-radius: 8px !important;
+      flex-shrink: 0 !important;
+
+      &.cultivation-icon {
+        background: #ecfdf5 !important;
+      }
+
+      &.times-icon {
+        background: #eff6ff !important;
+      }
+
+      &.harvest-icon {
+        background: #fef3c7 !important;
+      }
+
+      &.idle-icon {
+        background: #f3f4f6 !important;
+      }
+    }
+
+    .status-info {
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+
+    .status-label {
+      display: block !important;
+      color: #6b7280 !important;
+      font-weight: 500 !important;
+      font-size: 12px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      margin-bottom: 4px !important;
+    }
+
+    .status-value {
+      color: #1f2937 !important;
+      font-weight: 700 !important;
+      font-size: 14px !important;
+      line-height: 1.4 !important;
+
+      &.status-number {
+        font-size: 20px !important;
+        color: #059669 !important;
+      }
+
+      &.status-highlight {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+        padding: 6px 12px !important;
+        border-radius: 6px !important;
+        border: 1px solid #bbf7d0 !important;
+        display: inline-block !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+      }
+    }
+
+    .timeline-badge {
+      display: inline-block !important;
+      background: #dcfce7 !important;
+      color: #166534 !important;
+      border-radius: 16px !important;
+      padding: 4px 12px !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      margin-right: 6px !important;
+      margin-bottom: 4px !important;
+      border: 1px solid #bbf7d0 !important;
+    }
+
+    // Remove old status-row styles
+    .status-row {
+      display: none !important;
+    }
+  }
+
+  .analytics-content {
+    padding: 20px !important;
+    min-height: 400px !important;
+  }
+
+  .analytics-chart-container {
+    margin-bottom: 24px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    height: 280px !important;
+
+    canvas {
+      width: 100% !important;
+      height: 250px !important;
+      max-height: 250px !important;
+    }
+  }
+
+  .analytics-chart2-container {
+    margin-bottom: 20px !important;
+    background: #f0f7fa !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+    height: 380px !important;
+
+    canvas {
+      width: 100% !important;
+      height: 350px !important;
+      max-height: 350px !important;
+    }
+  }
+
+  .analytics-stacked-bar {
+    width: 100% !important;
+    height: 350px !important;
+    max-height: 350px !important;
+  }
+}
+
+// Analytics Button Style
+.analytics-button {
+  margin-right: 8px;
+  transition: background 0.2s;
+}
+
 // Responsive adjustments
 @media (max-width: 768px) {
   .histogram-control {
@@ -114,6 +323,55 @@
   }
 }
 
+// Responsive adjustments for analytics modal
+@media (max-width: 768px) {
+  .analytics-modal-control {
+    min-width: 320px !important;
+    max-width: 360px !important;
+
+    .analytics-status {
+      .status-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+      }
+
+      .status-card {
+        padding: 12px !important;
+        gap: 10px !important;
+      }
+
+      .status-icon {
+        font-size: 20px !important;
+        width: 32px !important;
+        height: 32px !important;
+      }
+    }
+
+    .analytics-chart-container {
+      height: 220px !important;
+
+      canvas {
+        height: 190px !important;
+        max-height: 190px !important;
+      }
+    }
+
+    .analytics-chart2-container {
+      height: 320px !important;
+
+      canvas {
+        height: 290px !important;
+        max-height: 290px !important;
+      }
+    }
+
+    .analytics-stacked-bar {
+      height: 290px !important;
+      max-height: 290px !important;
+    }
+  }
+}
+
 // CSS Variables for consistent theming
 :root {
   --primary-color: #007bff;
@@ -124,4 +382,10 @@
   --success-color: #28a745;
   --error-color: #dc3545;
   --info-color: #17a2b8;
+}
+
+.leaflet-control.ndvi-control {
+  display: flex !important;
+  flex-direction: row;
+  gap: 16px;
 }

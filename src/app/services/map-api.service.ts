@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
@@ -7,7 +8,7 @@ import { Observable } from 'rxjs';
 export class MapApiService {
   private token: string = '';
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
   // Fetch authentication token
   fetchToken(): Promise<string> {
@@ -242,5 +243,14 @@ export class MapApiService {
         console.error('Error fetching image data:', error);
         throw error;
       });
+  }
+
+  fetchAnalyticsStatus(
+    fromDate: string,
+    toDate: string,
+    seasonFieldId: string
+  ): Promise<any> {
+    const url = `http://202.4.127.187:4114/status?fromDate=${fromDate}&toDate=${toDate}&seasonFieldId=${seasonFieldId}`;
+    return this.http.get(url).toPromise();
   }
 }
