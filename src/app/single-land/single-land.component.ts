@@ -433,11 +433,14 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
         div.style.borderRadius = '8px';
         div.style.padding = '0';
         div.style.display = 'none';
-        div.style.minWidth = '400px';
-        div.style.maxWidth = '450px';
-        div.style.maxHeight = '60vh';
+        div.style.minWidth = '600px';
+        div.style.maxWidth = '600px';
+        div.style.maxHeight = '90.4vh';
+        div.style.top = '-84px';
+        div.style.left = '-10px';
         div.style.overflowY = 'auto';
         div.style.fontFamily = 'inherit';
+        div.style.zIndex = '9999';
         div.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
 
         // Header
@@ -1494,51 +1497,64 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
     fromDate.setMonth(toDate.getMonth() - 3);
     const toDateStr = toDate.toISOString().split('T')[0];
     const fromDateStr = fromDate.toISOString().split('T')[0];
+    const resp = this.mapApiService.responseData;
+    this.analyticsStatus = resp.status;
+    this.analyticsLineChartData = resp.line_chart;
+    // Remove loading overlay
+    if (this.analyticsModalDiv) {
+      const loadingOverlay = this.analyticsModalDiv.querySelector(
+        '.analytics-loading-overlay'
+      );
+      if (loadingOverlay) {
+        loadingOverlay.remove();
+      }
+    }
+    this.updateAnalyticsModal();
 
-    this.mapApiService
-      .fetchAnalyticsStatus(fromDateStr, toDateStr, this.seasonFieldInfo.id)
-      .then((resp) => {
-        this.analyticsStatus = resp.status;
-        this.analyticsLineChartData = resp.line_chart;
-        // Remove loading overlay
-        if (this.analyticsModalDiv) {
-          const loadingOverlay = this.analyticsModalDiv.querySelector(
-            '.analytics-loading-overlay'
-          );
-          if (loadingOverlay) {
-            loadingOverlay.remove();
-          }
-        }
-        this.updateAnalyticsModal();
-      })
-      .catch((err) => {
-        this.analyticsStatus = null;
-        this.analyticsLineChartData = [];
-        // Show error state instead of loading
-        if (this.analyticsModalDiv) {
-          const loadingOverlay = this.analyticsModalDiv.querySelector(
-            '.analytics-loading-overlay'
-          );
-          if (loadingOverlay) {
-            loadingOverlay.innerHTML = `
-              <div style="
-                text-align: center;
-                padding: 24px;
-                color: #991b1b;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
-              ">
-                <span style="font-size: 32px;">⚠️</span>
-                <div style="font-size: 16px; font-weight: 600;">Failed to load analytics data</div>
-                <div style="font-size: 14px; color: #64748b;">Please try again later</div>
-              </div>
-            `;
-          }
-        }
-        this.updateAnalyticsModal();
-      });
+    // this.mapApiService
+    //   .fetchAnalyticsStatus(fromDateStr, toDateStr, this.seasonFieldInfo.id)
+    //   .then((resp) => {
+    //     this.analyticsStatus = resp.status;
+    //     this.analyticsLineChartData = resp.line_chart;
+    //     // Remove loading overlay
+    //     if (this.analyticsModalDiv) {
+    //       const loadingOverlay = this.analyticsModalDiv.querySelector(
+    //         '.analytics-loading-overlay'
+    //       );
+    //       if (loadingOverlay) {
+    //         loadingOverlay.remove();
+    //       }
+    //     }
+    //     this.updateAnalyticsModal();
+    //   })
+    //   .catch((err) => {
+    //     this.analyticsStatus = null;
+    //     this.analyticsLineChartData = [];
+    //     // Show error state instead of loading
+    //     if (this.analyticsModalDiv) {
+    //       const loadingOverlay = this.analyticsModalDiv.querySelector(
+    //         '.analytics-loading-overlay'
+    //       );
+    //       if (loadingOverlay) {
+    //         loadingOverlay.innerHTML = `
+    //           <div style="
+    //             text-align: center;
+    //             padding: 24px;
+    //             color: #991b1b;
+    //             display: flex;
+    //             flex-direction: column;
+    //             align-items: center;
+    //             gap: 12px;
+    //           ">
+    //             <span style="font-size: 32px;">⚠️</span>
+    //             <div style="font-size: 16px; font-weight: 600;">Failed to load analytics data</div>
+    //             <div style="font-size: 14px; color: #64748b;">Please try again later</div>
+    //           </div>
+    //         `;
+    //       }
+    //     }
+    //     this.updateAnalyticsModal();
+    //   });
   }
 
   private updateAnalyticsModal(): void {
