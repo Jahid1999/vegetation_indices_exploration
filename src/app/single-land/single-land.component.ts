@@ -433,8 +433,8 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
         div.style.borderRadius = '8px';
         div.style.padding = '0';
         div.style.display = 'none';
-        div.style.minWidth = '600px';
-        div.style.maxWidth = '600px';
+        div.style.minWidth = '800px';
+        div.style.maxWidth = '800px';
         div.style.maxHeight = '90.4vh';
         div.style.top = '-84px';
         div.style.left = '-10px';
@@ -1520,67 +1520,67 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
 
     const toDate = new Date();
     const fromDate = new Date();
-    fromDate.setMonth(toDate.getMonth() - 3);
+    fromDate.setMonth(toDate.getMonth() - 29);
     const toDateStr = toDate.toISOString().split('T')[0];
     const fromDateStr = fromDate.toISOString().split('T')[0];
-    // const resp = this.mapApiService.responseData;
-    // this.analyticsStatus = resp.status;
-    // this.analyticsLineChartData = resp.line_chart;
-    // // Remove loading overlay
-    // if (this.analyticsModalDiv) {
-    //   const loadingOverlay = this.analyticsModalDiv.querySelector(
-    //     '.analytics-loading-overlay'
-    //   );
-    //   if (loadingOverlay) {
-    //     loadingOverlay.remove();
-    //   }
-    // }
-    // this.updateAnalyticsModal();
+    const resp = this.mapApiService.responseData;
+    this.analyticsStatus = resp.status;
+    this.analyticsLineChartData = resp.line_chart;
+    // Remove loading overlay
+    if (this.analyticsModalDiv) {
+      const loadingOverlay = this.analyticsModalDiv.querySelector(
+        '.analytics-loading-overlay'
+      );
+      if (loadingOverlay) {
+        loadingOverlay.remove();
+      }
+    }
+    this.updateAnalyticsModal();
 
-    this.mapApiService
-      .fetchAnalyticsStatus(fromDateStr, toDateStr, this.seasonFieldInfo.id)
-      .then((resp) => {
-        this.analyticsStatus = resp.status;
-        this.analyticsLineChartData = resp.line_chart;
-        // Remove loading overlay
-        if (this.analyticsModalDiv) {
-          const loadingOverlay = this.analyticsModalDiv.querySelector(
-            '.analytics-loading-overlay'
-          );
-          if (loadingOverlay) {
-            loadingOverlay.remove();
-          }
-        }
-        this.updateAnalyticsModal();
-      })
-      .catch((err) => {
-        this.analyticsStatus = null;
-        this.analyticsLineChartData = [];
-        // Show error state instead of loading
-        if (this.analyticsModalDiv) {
-          const loadingOverlay = this.analyticsModalDiv.querySelector(
-            '.analytics-loading-overlay'
-          );
-          if (loadingOverlay) {
-            loadingOverlay.innerHTML = `
-              <div style="
-                text-align: center;
-                padding: 24px;
-                color: #991b1b;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
-              ">
-                <span style="font-size: 32px;">⚠️</span>
-                <div style="font-size: 16px; font-weight: 600;">Failed to load analytics data</div>
-                <div style="font-size: 14px; color: #64748b;">Please try again later</div>
-              </div>
-            `;
-          }
-        }
-        this.updateAnalyticsModal();
-      });
+    // this.mapApiService
+    //   .fetchAnalyticsStatus(fromDateStr, toDateStr, this.seasonFieldInfo.id)
+    //   .then((resp) => {
+    //     this.analyticsStatus = resp.status;
+    //     this.analyticsLineChartData = resp.line_chart;
+    //     // Remove loading overlay
+    //     if (this.analyticsModalDiv) {
+    //       const loadingOverlay = this.analyticsModalDiv.querySelector(
+    //         '.analytics-loading-overlay'
+    //       );
+    //       if (loadingOverlay) {
+    //         loadingOverlay.remove();
+    //       }
+    //     }
+    //     this.updateAnalyticsModal();
+    //   })
+    //   .catch((err) => {
+    //     this.analyticsStatus = null;
+    //     this.analyticsLineChartData = [];
+    //     // Show error state instead of loading
+    //     if (this.analyticsModalDiv) {
+    //       const loadingOverlay = this.analyticsModalDiv.querySelector(
+    //         '.analytics-loading-overlay'
+    //       );
+    //       if (loadingOverlay) {
+    //         loadingOverlay.innerHTML = `
+    //           <div style="
+    //             text-align: center;
+    //             padding: 24px;
+    //             color: #991b1b;
+    //             display: flex;
+    //             flex-direction: column;
+    //             align-items: center;
+    //             gap: 12px;
+    //           ">
+    //             <span style="font-size: 32px;">⚠️</span>
+    //             <div style="font-size: 16px; font-weight: 600;">Failed to load analytics data</div>
+    //             <div style="font-size: 14px; color: #64748b;">Please try again later</div>
+    //           </div>
+    //         `;
+    //       }
+    //     }
+    //     this.updateAnalyticsModal();
+    //   });
   }
 
   private updateAnalyticsModal(): void {
@@ -1810,49 +1810,6 @@ export class SingleLandComponent implements AfterViewInit, OnDestroy {
                 font-weight: 700;
                 color: #d97706;
               ">${this.analyticsStatus.harvesting_times}</div>
-            </div>
-          </div>
-
-          <div class="status-card" style="
-            display: flex;
-            align-items: center;
-            padding: 16px;
-            background: linear-gradient(to right bottom, #ffffff, #f8fafc);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            &:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 6px rgba(0,0,0,0.08);
-            }
-          ">
-            <div class="status-icon idle-icon" style="
-              font-size: 24px;
-              margin-right: 12px;
-              padding: 12px;
-              background: rgba(107, 114, 128, 0.1);
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">⏸️</div>
-            <div class="status-info" style="flex: 1;">
-              <span class="status-label" style="
-                display: block;
-                font-size: 12px;
-                font-weight: 500;
-                color: #64748b;
-                margin-bottom: 4px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-              ">Idle Periods</span>
-              <div class="status-value status-number" style="
-                font-size: 24px;
-                font-weight: 700;
-                color: #4b5563;
-              ">${this.analyticsStatus.idle_periods}</div>
             </div>
           </div>
         </div>
